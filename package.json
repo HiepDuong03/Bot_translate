@@ -1,0 +1,24 @@
+{
+  "name": "discord-translate-bot",
+  "version": "1.0.0",
+  "description": "Standalone Discord bot for natural Korean-Vietnamese parallel auto-translation using Gemini AI with multi-key failover.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node scripts/test-translate.js"
+  },
+  "keywords": [
+    "discord",
+    "translate",
+    "korean",
+    "vietnamese",
+    "gemini"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "@google/genai": "^1.0.0",
+    "discord.js": "^14.27.0",
+    "dotenv": "^16.4.7"
+  }
+}
