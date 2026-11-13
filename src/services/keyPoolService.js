@@ -5,15 +5,21 @@ const AUTH_ERROR_COOLDOWN_MS = 60 * 60 * 1000;
 
 function isRateLimitOrTransient(error) {
   const status = error?.status || error?.statusCode || error?.response?.status;
+  const code = error?.code || error?.cause?.code;
   const msg = String(error?.message || '').toLowerCase();
   return (
     status === 429 ||
     status === 500 ||
     status === 503 ||
+    code === 'ECONNRESET' ||
+    code === 'ETIMEDOUT' ||
+    code === 'ECONNREFUSED' ||
     error?.name === 'TimeoutError' ||
     error?.name === 'AbortError' ||
     msg.includes('429') ||
     msg.includes('503') ||
+    msg.includes('fetch failed') ||
+    msg.includes('econnreset') ||
     msg.includes('resource_exhausted') ||
     msg.includes('unavailable') ||
     msg.includes('quota') ||

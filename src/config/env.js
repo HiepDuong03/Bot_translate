@@ -15,7 +15,7 @@ export const config = {
   clientId: (process.env.CLIENT_ID || '').trim(),
   guildId: (process.env.GUILD_ID || '').trim(),
   geminiApiKeys: parseCommaList(rawKeys),
-  geminiModel: (process.env.GEMINI_MODEL || 'gemini-flash-latest').trim(),
+  geminiModel: (process.env.GEMINI_MODEL || 'gemini-3.8-flash').trim(),
   autoTranslateChannelIds: parseCommaList(process.env.AUTO_TRANSLATE_CHANNEL_IDS),
   replyToMessage: String(process.env.REPLY_TO_MESSAGE).toLowerCase() === 'true',
 };

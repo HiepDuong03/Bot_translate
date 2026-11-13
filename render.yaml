@@ -13,6 +13,6 @@ services:
       - key: GEMINI_API_KEYS
         sync: false
       - key: GEMINI_MODEL
-        value: gemini-flash-latest
+        value: gemini-3.8-flash
       - key: REPLY_TO_MESSAGE
         value: "false"

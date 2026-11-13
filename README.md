@@ -49,7 +49,7 @@ Bot đã tích hợp sẵn **HTTP Health Check Server** (lắng nghe cổng `POR
    * `DISCORD_TOKEN`: Token bot Discord
    * `CLIENT_ID`: Application ID của bot
    * `GEMINI_API_KEYS`: Dán 3–5 API Key cách nhau bằng dấu phẩy
-   * `GEMINI_MODEL`: `gemini-flash-latest` (hoặc `gemini-2.5-flash`)
+   * `GEMINI_MODEL`: `gemini-3.8-flash`
 4. **Giữ bot thức 24/24**: Copy URL Web Service của Render (dạng `https://bot-translate-xxxx.onrender.com`) rồi tạo một Monitor HTTP(s) trên [UptimeRobot](https://uptimerobot.com/) ping mỗi **5 phút** để Render Free không bị ngủ đông.
 
 ---
