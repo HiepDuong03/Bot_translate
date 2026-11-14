@@ -8,6 +8,12 @@ function parseCommaList(value) {
     .filter(Boolean);
 }
 
+function parseIntWithDefault(value, fallback, min = 0) {
+  const parsed = Number.parseInt(value ?? '', 10);
+  if (Number.isNaN(parsed) || parsed < min) return fallback;
+  return parsed;
+}
+
 const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
 const primaryModel = (process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite').trim();
 const rawFallbacks = process.env.GEMINI_FALLBACK_MODELS ?? 'gemini-flash-lite-latest,gemini-3.1-flash-lite';
@@ -23,6 +29,12 @@ export const config = {
   autoTranslateAll: String(process.env.AUTO_TRANSLATE_ALL ?? 'true').toLowerCase() !== 'false',
   autoTranslateChannelIds: parseCommaList(process.env.AUTO_TRANSLATE_CHANNEL_IDS),
   ignoredChannelIds: parseCommaList(process.env.IGNORED_CHANNEL_IDS),
+  contextMaxMessages: parseIntWithDefault(process.env.CONTEXT_MAX_MESSAGES, 4, 0),
+  contextTtlMs: parseIntWithDefault(process.env.CONTEXT_TTL_MS, 10 * 60 * 1000, 0),
+  batchDebounceMs: parseIntWithDefault(process.env.BATCH_DEBOUNCE_MS, 1200, 0),
+  quotaAlertCooldownMs: parseIntWithDefault(process.env.QUOTA_ALERT_COOLDOWN_MS, 15 * 60 * 1000, 1000),
+  tursoDatabaseUrl: (process.env.TURSO_DATABASE_URL || '').trim(),
+  tursoAuthToken: (process.env.TURSO_AUTH_TOKEN || '').trim(),
   replyToMessage: String(process.env.REPLY_TO_MESSAGE).toLowerCase() === 'true',
 };
 

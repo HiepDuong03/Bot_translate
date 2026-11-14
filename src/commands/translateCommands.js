@@ -26,7 +26,7 @@ export async function handleSlashCommand(interaction) {
   const { commandName, channelId } = interaction;
 
   if (commandName === 'translate-on') {
-    const added = channelService.enable(channelId);
+    const added = await channelService.enable(channelId);
     const msg = added
       ? '✅ Đã **BẬT** tự động dịch song song Hàn ⇄ Việt cho kênh này.'
       : 'ℹ️ Kênh này đã được bật dịch tự động từ trước rồi.';
@@ -35,7 +35,7 @@ export async function handleSlashCommand(interaction) {
   }
 
   if (commandName === 'translate-off') {
-    const removed = channelService.disable(channelId);
+    const removed = await channelService.disable(channelId);
     const msg = removed
       ? '🛑 Đã **TẮT** tự động dịch cho kênh này.'
       : 'ℹ️ Kênh này hiện chưa bật dịch tự động.';
@@ -49,6 +49,7 @@ export async function handleSlashCommand(interaction) {
     const modeLabel = config.autoTranslateAll
       ? 'Tự động dịch mọi kênh bot tham gia (tắt riêng bằng `/translate-off`)'
       : 'Chỉ dịch các kênh được bật (`/translate-on`)';
+    const storageLabel = config.tursoDatabaseUrl ? 'Turso Cloud DB (Bền vững 24/7)' : 'Local JSON (tạm thời trên Render Free)';
 
     const lines = statuses.map(
       (k) => `• **Key #${k.id}** (\`${k.maskedKey}\`): **${k.status}** | Thành công: \`${k.successCount}\` | Lỗi: \`${k.errorCount}\``
@@ -59,6 +60,8 @@ export async function handleSlashCommand(interaction) {
     const summary = [
       `**Trạng thái kênh hiện tại:** ${channelEnabled ? '🟢 Đang BẬT dịch tự động' : '⚪ Đang TẮT'}`,
       `**Chế độ kênh:** ${modeLabel}`,
+      `**Lưu trữ cấu hình:** ${storageLabel}`,
+      `**Gom tin & Ngữ cảnh:** Gom \`${config.batchDebounceMs}ms\` | Nhớ \`${config.contextMaxMessages}\` tin gần nhất`,
       `**Model (Ưu tiên → Dự phòng):** \`${modelsLabel}\``,
       `**Danh sách Gemini API Keys (${statuses.length} key):**`,
       lines.length > 0 ? lines.join('\n') : '_Chưa cấu hình API Key nào._',

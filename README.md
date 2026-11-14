@@ -51,7 +51,10 @@ Bot đã tích hợp sẵn **HTTP Health Check Server** (lắng nghe cổng `POR
    * `GEMINI_API_KEYS`: Dán 3–5 API Key cách nhau bằng dấu phẩy
    * `GEMINI_MODEL`: `gemini-3.5-flash-lite`
    * `GEMINI_FALLBACK_MODELS`: `gemini-flash-lite-latest,gemini-3.1-flash-lite`
-   * `AUTO_TRANSLATE_ALL`: `true` *(mặc định bot tự dịch ở mọi kênh mà bạn cấp quyền cho bot, không bị mất sau khi Render restart; có thể tắt riêng từng kênh bằng `/translate-off`)*
+   * `AUTO_TRANSLATE_ALL`: `true` *(mặc định bot tự dịch ở mọi kênh mà bạn cấp quyền cho bot; tắt riêng từng kênh bằng `/translate-off`)*
+   * `BATCH_DEBOUNCE_MS`: `1200` *(gom các câu nhắn liên tiếp của cùng 1 người trong 1.2 giây để tiết kiệm API)*
+   * `CONTEXT_MAX_MESSAGES`: `4` *(nhớ 4 tin gần nhất làm ngữ cảnh dịch)*
+   * `TURSO_DATABASE_URL` & `TURSO_AUTH_TOKEN` *(tùy chọn: điền nếu muốn lưu vĩnh viễn `/translate-on`/`/translate-off` trên cloud qua Render restart)*
 4. **Giữ bot thức 24/24**: Copy URL Web Service của Render (dạng `https://bot-translate-xxxx.onrender.com`) rồi tạo một Monitor HTTP(s) trên [UptimeRobot](https://uptimerobot.com/) ping mỗi **5 phút** để Render Free không bị ngủ đông.
 
 ---
