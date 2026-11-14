@@ -5,20 +5,40 @@ import { config } from '../config/env.js';
 const DATA_DIR = path.resolve('data');
 const CHANNELS_FILE = path.join(DATA_DIR, 'channels.json');
 
-class ChannelService {
-  constructor() {
-    this.enabledChannels = new Set(config.autoTranslateChannelIds);
+export class ChannelService {
+  constructor({
+    autoTranslateAll = config.autoTranslateAll,
+    initialEnabled = config.autoTranslateChannelIds,
+    initialDisabled = config.ignoredChannelIds,
+    storageFile = CHANNELS_FILE,
+  } = {}) {
+    this.autoTranslateAll = autoTranslateAll;
+    this.storageFile = storageFile;
+    this.enabledChannels = new Set(initialEnabled.map(String));
+    this.disabledChannels = new Set(initialDisabled.map(String));
     this.load();
   }
 
   load() {
+    if (!this.storageFile) return;
     try {
-      if (!fs.existsSync(CHANNELS_FILE)) return;
-      const raw = fs.readFileSync(CHANNELS_FILE, 'utf8');
+      if (!fs.existsSync(this.storageFile)) return;
+      const raw = fs.readFileSync(this.storageFile, 'utf8');
       const parsed = JSON.parse(raw);
+
       if (Array.isArray(parsed)) {
         for (const id of parsed) {
           this.enabledChannels.add(String(id));
+        }
+        return;
+      }
+
+      if (parsed && typeof parsed === 'object') {
+        if (Array.isArray(parsed.enabled)) {
+          for (const id of parsed.enabled) this.enabledChannels.add(String(id));
+        }
+        if (Array.isArray(parsed.disabled)) {
+          for (const id of parsed.disabled) this.disabledChannels.add(String(id));
         }
       }
     } catch (error) {
@@ -27,37 +47,53 @@ class ChannelService {
   }
 
   save() {
+    if (!this.storageFile) return;
     try {
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
+      const dir = path.dirname(this.storageFile);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(CHANNELS_FILE, JSON.stringify([...this.enabledChannels], null, 2), 'utf8');
+      const payload = {
+        enabled: [...this.enabledChannels],
+        disabled: [...this.disabledChannels],
+      };
+      fs.writeFileSync(this.storageFile, JSON.stringify(payload, null, 2), 'utf8');
     } catch (error) {
       console.error('[ChannelService] Failed to save channels.json:', error.message);
     }
   }
 
   isEnabled(channelId) {
-    return this.enabledChannels.has(String(channelId));
+    const id = String(channelId);
+    if (this.disabledChannels.has(id)) return false;
+    if (this.autoTranslateAll) return true;
+    return this.enabledChannels.has(id);
   }
 
   enable(channelId) {
     const id = String(channelId);
-    const added = !this.enabledChannels.has(id);
+    const wasEnabled = this.isEnabled(id);
+    this.disabledChannels.delete(id);
     this.enabledChannels.add(id);
     this.save();
-    return added;
+    return !wasEnabled;
   }
 
   disable(channelId) {
     const id = String(channelId);
-    const removed = this.enabledChannels.delete(id);
+    const wasEnabled = this.isEnabled(id);
+    this.enabledChannels.delete(id);
+    this.disabledChannels.add(id);
     this.save();
-    return removed;
+    return wasEnabled;
   }
 
-  list() {
+  listEnabled() {
     return [...this.enabledChannels];
+  }
+
+  listDisabled() {
+    return [...this.disabledChannels];
   }
 }
 

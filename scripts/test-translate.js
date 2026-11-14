@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { KeyPoolService } from '../src/services/keyPoolService.js';
+import { ChannelService } from '../src/services/channelService.js';
 import { shouldSkipTranslation, translateText } from '../src/services/geminiService.js';
 import { config } from '../src/config/env.js';
 
@@ -16,7 +17,20 @@ async function runTests() {
   assert.equal(shouldSkipTranslation('ok nha ban'), false);
   console.log('PASS: shouldSkipTranslation');
 
-  console.log('\n=== 2. Testing KeyPoolService failover on 429 ===');
+  console.log('\n=== 2. Testing ChannelService modes ===');
+  const autoAllSvc = new ChannelService({ autoTranslateAll: true, storageFile: null });
+  assert.equal(autoAllSvc.isEnabled('chan-1'), true);
+  assert.equal(autoAllSvc.disable('chan-1'), true);
+  assert.equal(autoAllSvc.isEnabled('chan-1'), false);
+  assert.equal(autoAllSvc.enable('chan-1'), true);
+  assert.equal(autoAllSvc.isEnabled('chan-1'), true);
+
+  const whitelistSvc = new ChannelService({ autoTranslateAll: false, initialEnabled: ['chan-2'], storageFile: null });
+  assert.equal(whitelistSvc.isEnabled('chan-1'), false);
+  assert.equal(whitelistSvc.isEnabled('chan-2'), true);
+  console.log('PASS: ChannelService');
+
+  console.log('\n=== 3. Testing KeyPoolService failover on 429 ===');
   const mockPool = new KeyPoolService(
     ['key-1-aaaa', 'key-2-bbbb', 'key-3-cccc'],
     (key) => ({ key })
@@ -42,23 +56,30 @@ async function runTests() {
   assert.equal(statuses[1].successCount, 1);
   console.log('PASS: KeyPoolService automatic failover');
 
-  console.log('\n=== 3. Live Gemini Translation Test (optional if .env has keys) ===');
+  console.log('\n=== 4. Live Gemini Translation Test (optional if .env has keys) ===');
   if (config.geminiApiKeys.length === 0) {
     console.log('SKIPPED: No GEMINI_API_KEYS in .env (live API test skipped).');
     return;
   }
 
   const samples = [
-    '가능한사람있을까요',
-    '아 진짜요? 넘 웃기네 ㅋㅋㅋ 낼 봐요',
-    'Hôm nay 8 giờ tối họp nhé mọi người, nhớ vào đúng giờ ạ',
+    { input: '가능한사람있을까요', expectHangul: false },
+    { input: '아 진짜요? 넘 웃기네 ㅋㅋㅋ 낼 봐요', expectHangul: false },
+    { input: 'Hôm nay 8 giờ tối họp nhé mọi người, nhớ vào đúng giờ ạ', expectHangul: true },
+    { input: 'ok ban oi doi xiu nha', expectHangul: true },
   ];
 
-  for (const text of samples) {
-    const translated = await translateText(text);
-    console.log(`Input : ${text}`);
-    console.log(`Output: ${translated}\n`);
-    assert.ok(translated && translated.length > 0, 'Translation should not be empty');
+  const hangulRegex = /[\uAC00-\uD7AF]/;
+  for (const { input, expectHangul } of samples) {
+    const translated = await translateText(input);
+    console.log(`Input : ${input}`);
+    console.log(`Output (${translated?.model}): ${translated?.text}\n`);
+    assert.ok(translated && translated.text.length > 0, 'Translation should not be empty');
+    assert.equal(
+      hangulRegex.test(translated.text),
+      expectHangul,
+      `Expected ${expectHangul ? 'Korean Hangul' : 'Vietnamese'} output, got: ${translated.text}`
+    );
   }
   console.log('PASS: Live Gemini translation');
 }

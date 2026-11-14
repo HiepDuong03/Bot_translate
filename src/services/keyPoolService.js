@@ -1,14 +1,26 @@
 import { GoogleGenAI } from '@google/genai';
 
-const DEFAULT_COOLDOWN_MS = 60 * 1000;
+const RATE_LIMIT_COOLDOWN_MS = 60 * 1000;
+const TRANSIENT_COOLDOWN_MS = 5 * 1000;
 const AUTH_ERROR_COOLDOWN_MS = 60 * 60 * 1000;
 
-function isRateLimitOrTransient(error) {
+function isRateLimitError(error) {
+  const status = error?.status || error?.statusCode || error?.response?.status;
+  const msg = String(error?.message || '').toLowerCase();
+  return (
+    status === 429 ||
+    msg.includes('429') ||
+    msg.includes('resource_exhausted') ||
+    msg.includes('quota') ||
+    msg.includes('rate limit')
+  );
+}
+
+function isTransientNetworkOrServerError(error) {
   const status = error?.status || error?.statusCode || error?.response?.status;
   const code = error?.code || error?.cause?.code;
   const msg = String(error?.message || '').toLowerCase();
   return (
-    status === 429 ||
     status === 500 ||
     status === 503 ||
     code === 'ECONNRESET' ||
@@ -16,14 +28,10 @@ function isRateLimitOrTransient(error) {
     code === 'ECONNREFUSED' ||
     error?.name === 'TimeoutError' ||
     error?.name === 'AbortError' ||
-    msg.includes('429') ||
     msg.includes('503') ||
     msg.includes('fetch failed') ||
     msg.includes('econnreset') ||
-    msg.includes('resource_exhausted') ||
     msg.includes('unavailable') ||
-    msg.includes('quota') ||
-    msg.includes('rate limit') ||
     msg.includes('overloaded') ||
     msg.includes('timeout') ||
     msg.includes('aborted')
@@ -110,14 +118,17 @@ export class KeyPoolService {
         slot.lastError = error?.message || String(error);
         lastError = error;
 
-        if (isAuthOrKeyError(error)) {
+        if (isRateLimitError(error)) {
+          slot.cooldownUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
+          console.warn(`[KeyPool] Key #${slot.id} (${slot.maskedKey}) hit rate limit (60s cooldown): ${slot.lastError}`);
+        } else if (isAuthOrKeyError(error)) {
           slot.cooldownUntil = Date.now() + AUTH_ERROR_COOLDOWN_MS;
-          console.warn(`[KeyPool] Key #${slot.id} (${slot.maskedKey}) auth/invalid error, cooling down 1h: ${slot.lastError}`);
-        } else if (isRateLimitOrTransient(error)) {
-          slot.cooldownUntil = Date.now() + DEFAULT_COOLDOWN_MS;
-          console.warn(`[KeyPool] Key #${slot.id} (${slot.maskedKey}) hit rate limit/transient error, switching to next key: ${slot.lastError}`);
+          console.warn(`[KeyPool] Key #${slot.id} (${slot.maskedKey}) auth/invalid error (1h cooldown): ${slot.lastError}`);
+        } else if (isTransientNetworkOrServerError(error)) {
+          slot.cooldownUntil = Date.now() + TRANSIENT_COOLDOWN_MS;
+          console.warn(`[KeyPool] Key #${slot.id} (${slot.maskedKey}) transient/503 error (5s cooldown): ${slot.lastError}`);
         } else {
-          // Non-key-related error (e.g. content safety or network abort): rethrow immediately
+          // Model 404 or non-key error: rethrow immediately so model fallback can handle it
           throw error;
         }
       }

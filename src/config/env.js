@@ -9,14 +9,20 @@ function parseCommaList(value) {
 }
 
 const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
+const primaryModel = (process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite').trim();
+const rawFallbacks = process.env.GEMINI_FALLBACK_MODELS ?? 'gemini-flash-lite-latest,gemini-3.1-flash-lite';
+const fallbackModels = parseCommaList(rawFallbacks).filter((m) => m !== primaryModel);
 
 export const config = {
   discordToken: (process.env.DISCORD_TOKEN || '').trim(),
   clientId: (process.env.CLIENT_ID || '').trim(),
   guildId: (process.env.GUILD_ID || '').trim(),
   geminiApiKeys: parseCommaList(rawKeys),
-  geminiModel: (process.env.GEMINI_MODEL || 'gemini-3.8-flash').trim(),
+  geminiModel: primaryModel,
+  geminiFallbackModels: fallbackModels,
+  autoTranslateAll: String(process.env.AUTO_TRANSLATE_ALL ?? 'true').toLowerCase() !== 'false',
   autoTranslateChannelIds: parseCommaList(process.env.AUTO_TRANSLATE_CHANNEL_IDS),
+  ignoredChannelIds: parseCommaList(process.env.IGNORED_CHANNEL_IDS),
   replyToMessage: String(process.env.REPLY_TO_MESSAGE).toLowerCase() === 'true',
 };
 

@@ -38,7 +38,10 @@ async function registerCommands() {
 
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`[Bot] Logged in as ${readyClient.user.tag}`);
-  console.log(`[Bot] Model: ${config.geminiModel} | Loaded ${config.geminiApiKeys.length} Gemini API key(s).`);
+  console.log(
+    `[Bot] Model: ${config.geminiModel} (fallbacks: ${config.geminiFallbackModels.join(', ') || 'none'}) | ` +
+    `Keys: ${config.geminiApiKeys.length} | AutoAll: ${config.autoTranslateAll}`
+  );
   try {
     await registerCommands();
   } catch (error) {
