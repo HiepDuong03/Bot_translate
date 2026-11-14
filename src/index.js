@@ -10,7 +10,7 @@ validateConfig();
 const PORT = process.env.PORT || 8080;
 const httpServer = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end('Discord Translate Bot is Online 24/7!');
+  res.end('Discord Translate Bot v2 (Instant) is Online 24/7!');
 });
 httpServer.listen(PORT, () => {
   console.log(`[HTTP] Health check server listening on port: ${PORT}`);

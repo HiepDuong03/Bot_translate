@@ -115,11 +115,49 @@ function selectSystemInstruction(text) {
 }
 
 /**
- * Creates a translator function with multi-model fallback (exposed for unit testing).
+ * Ultra-fast (~100-500ms) free Google Translate GTX fallback when Gemini is slow or overloaded.
+ * @param {string} text
+ * @returns {Promise<{ text: string, model: string } | null>}
+ */
+export async function translateWithGoogleGtx(text) {
+  const hasHangul = HANGUL_REGEX.test(text);
+  const hasVietnamese = VI_DIACRITIC_REGEX.test(text);
+
+  async function fetchGtx(sl, tl) {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(2500) });
+    if (!res.ok) throw new Error(`GoogleGTX HTTP ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data?.[0])
+      ? data[0].map((part) => part?.[0] || '').join('').trim()
+      : '';
+  }
+
+  if (hasHangul && hasVietnamese) {
+    const [viText, koText] = await Promise.all([fetchGtx('auto', 'vi'), fetchGtx('auto', 'ko')]);
+    return {
+      text: `🇻🇳 ${viText}\n🇰🇷 ${koText}`,
+      model: 'google-gtx-instant',
+    };
+  }
+
+  const sl = hasHangul ? 'ko' : 'vi';
+  const tl = hasHangul ? 'vi' : 'ko';
+  const translated = await fetchGtx(sl, tl);
+
+  if (!translated || translated.toLowerCase() === text.trim().toLowerCase()) {
+    return null;
+  }
+  return { text: translated, model: 'google-gtx-instant' };
+}
+
+/**
+ * Creates a translator function with multi-model fallback + instant Google GTX fallback.
  */
 export function createTranslator({
-  candidateModels = [config.geminiModel, ...config.geminiFallbackModels],
+  candidateModels = [config.geminiModel],
   executeWithPool = (fn) => keyPool.executeWithFailover(fn),
+  fastFallbackFn = translateWithGoogleGtx,
 } = {}) {
   return async function translate(text, contextMessages = []) {
     if (shouldSkipTranslation(text)) {
@@ -139,7 +177,7 @@ export function createTranslator({
             config: {
               systemInstruction,
               temperature: 0.2,
-              abortSignal: AbortSignal.timeout(5000),
+              abortSignal: AbortSignal.timeout(2200),
             },
           });
           return response.text;
@@ -153,11 +191,19 @@ export function createTranslator({
         return { text: cleaned, model };
       } catch (error) {
         lastError = error;
-        console.warn(`[Gemini] Model "${model}" failed across available keys (${error.message}). Trying next fallback model...`);
+        console.warn(`[Gemini] Model "${model}" slow/failed (${error.message}). Switching to instant fallback...`);
       }
     }
 
-    throw lastError || new Error('All Gemini models and API keys failed.');
+    if (typeof fastFallbackFn === 'function') {
+      try {
+        return await fastFallbackFn(text);
+      } catch (fallbackErr) {
+        console.warn(`[Fallback] GoogleGTX also failed: ${fallbackErr.message}`);
+      }
+    }
+
+    throw lastError || new Error('All Gemini models and fallbacks failed.');
   };
 }
 

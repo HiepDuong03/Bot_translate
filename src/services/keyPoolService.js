@@ -65,7 +65,14 @@ export class KeyPoolService {
    * @param {string[]} apiKeys
    * @param {(apiKey: string) => any} [clientFactory]
    */
-  constructor(apiKeys, clientFactory = (apiKey) => new GoogleGenAI({ apiKey })) {
+  constructor(
+    apiKeys,
+    clientFactory = (apiKey) =>
+      new GoogleGenAI({
+        apiKey,
+        httpOptions: { retryOptions: { attempts: 1 } },
+      })
+  ) {
     this.slots = apiKeys.map((apiKey, idx) => ({
       id: idx + 1,
       maskedKey: apiKey.length > 6 ? `...${apiKey.slice(-4)}` : '****',
