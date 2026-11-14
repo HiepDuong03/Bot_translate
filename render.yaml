@@ -19,7 +19,7 @@ services:
       - key: AUTO_TRANSLATE_ALL
         value: "true"
       - key: BATCH_DEBOUNCE_MS
-        value: "1200"
+        value: "0"
       - key: CONTEXT_MAX_MESSAGES
         value: "4"
       - key: REPLY_TO_MESSAGE

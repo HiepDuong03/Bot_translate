@@ -139,7 +139,7 @@ export function createTranslator({
             config: {
               systemInstruction,
               temperature: 0.2,
-              abortSignal: AbortSignal.timeout(12000),
+              abortSignal: AbortSignal.timeout(5000),
             },
           });
           return response.text;

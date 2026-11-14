@@ -16,25 +16,34 @@ function isRateLimitError(error) {
   );
 }
 
-function isTransientNetworkOrServerError(error) {
+function isModelOverloadOrTimeout(error) {
+  const status = error?.status || error?.statusCode || error?.response?.status;
+  const msg = String(error?.message || '').toLowerCase();
+  return (
+    status === 503 ||
+    status === 404 ||
+    error?.name === 'TimeoutError' ||
+    error?.name === 'AbortError' ||
+    msg.includes('503') ||
+    msg.includes('high demand') ||
+    msg.includes('unavailable') ||
+    msg.includes('overloaded') ||
+    msg.includes('timeout') ||
+    msg.includes('aborted')
+  );
+}
+
+function isTransientNetworkError(error) {
   const status = error?.status || error?.statusCode || error?.response?.status;
   const code = error?.code || error?.cause?.code;
   const msg = String(error?.message || '').toLowerCase();
   return (
     status === 500 ||
-    status === 503 ||
     code === 'ECONNRESET' ||
     code === 'ETIMEDOUT' ||
     code === 'ECONNREFUSED' ||
-    error?.name === 'TimeoutError' ||
-    error?.name === 'AbortError' ||
-    msg.includes('503') ||
     msg.includes('fetch failed') ||
-    msg.includes('econnreset') ||
-    msg.includes('unavailable') ||
-    msg.includes('overloaded') ||
-    msg.includes('timeout') ||
-    msg.includes('aborted')
+    msg.includes('econnreset')
   );
 }
 
@@ -124,11 +133,14 @@ export class KeyPoolService {
         } else if (isAuthOrKeyError(error)) {
           slot.cooldownUntil = Date.now() + AUTH_ERROR_COOLDOWN_MS;
           console.warn(`[KeyPool] Key #${slot.id} (${slot.maskedKey}) auth/invalid error (1h cooldown): ${slot.lastError}`);
-        } else if (isTransientNetworkOrServerError(error)) {
+        } else if (isModelOverloadOrTimeout(error)) {
+          // Model-wide overload/timeout (503/AbortError): do NOT waste time retrying all keys on a slow model;
+          // rethrow immediately so createTranslator switches to the fast fallback model right away!
+          throw error;
+        } else if (isTransientNetworkError(error)) {
           slot.cooldownUntil = Date.now() + TRANSIENT_COOLDOWN_MS;
-          console.warn(`[KeyPool] Key #${slot.id} (${slot.maskedKey}) transient/503 error (5s cooldown): ${slot.lastError}`);
+          console.warn(`[KeyPool] Key #${slot.id} (${slot.maskedKey}) transient network error (5s cooldown): ${slot.lastError}`);
         } else {
-          // Model 404 or non-key error: rethrow immediately so model fallback can handle it
           throw error;
         }
       }
