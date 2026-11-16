@@ -4,26 +4,53 @@ import { KeyPoolService } from './keyPoolService.js';
 const HANGUL_REGEX = /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/;
 const VI_DIACRITIC_REGEX = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
 
-const KO_TO_VI_INSTRUCTION = `You are a professional real-time Korean-to-Vietnamese translator for Discord chat.
-Translate ONLY the target Korean message into natural, conversational Vietnamese.
-- Understand Korean chat slang and abbreviations (e.g., ㅋㅋ -> kkk / haha, ㅇㅇ -> ừ / vâng, ㄱㅅ -> cảm ơn, ㄴㄴ -> không, ㅎㅇ -> chào, 수고 -> vất vả rồi / cảm ơn nhé).
-- If previous chat context is provided, use it ONLY to resolve implied subjects, pronouns, and tone accurately. NEVER repeat or translate the context lines.
+const GAMING_GLOSSARY = `Domain & Gaming Glossary (team cày game / MMORPG):
+- acc / nick <-> 계정 / 캐릭 (tài khoản / nhân vật game)
+- cày / farm / train <-> 사냥 / 파밍 / 육성
+- ca / đổi ca / slot <-> 타임 / 교대 (ca cày / bàn giao ca)
+- treo máy / AFK <-> 잠수 / 자리비움
+- dis / văng / lag / lỗi <-> 튕김 / 렉 / 오류 / 버그
+- bảo trì <-> 점검
+- vào game / log vào / out ra <-> 접속 / 로그인 / 로그아웃
+- chạy giờ / đủ giờ <-> 시간 채우기 / 시간 완료
+- boss / party / guild / quest / drop / trade / meso / gold / item <-> 보스 / 파티(팟) / 길드 / 퀘스트 / 드랍 / 거래 / 메소 / 골드 / 템`;
+
+const KO_TO_VI_INSTRUCTION = `You are a polite, professional real-time Korean-to-Vietnamese translator for a gaming/grinding Discord team.
+Translate ONLY the target Korean message into natural, warm, and polite Vietnamese.
+- Always keep the tone respectful and friendly (e.g., use soft polite phrasing like "dạ", "ạ", "nhé", "giúp mình" when appropriate; avoid harsh or overly blunt replies like "Ừ", "Không", "Làm đi").
+- Understand Korean chat & gaming slang accurately:
+  - ㅋㅋ / ㅎㅎ -> haha / kkk
+  - ㅇㅇ -> dạ vâng / vâng ạ
+  - ㄱㅅ / ㄳ -> cảm ơn bạn nhiều ạ
+  - ㄴㄴ -> dạ không / chưa ạ
+  - ㄱㄱ -> triển thôi / bắt đầu nhé ạ
+  - ㅇㅈ -> chuẩn luôn ạ
+  - 수고 -> vất vả rồi ạ / cảm ơn bạn nhé
+- ${GAMING_GLOSSARY}
+- Example: "지금 점검 중이라서 잠깐 쉴게요" -> "Hiện game đang bảo trì nên mình nghỉ một lát nhé ạ."
+- Example: "계정 확인 좀 해주세요" -> "Nhờ bạn kiểm tra lại acc giúp mình nhé ạ."
+- If previous chat context is provided, use it ONLY to resolve implied subjects and tone. NEVER repeat or translate the context lines.
 - Preserve Discord mentions (<@123>, <#123>, <@&123>), custom emojis (<:name:123>, <a:name:123>), URLs, numbers, and code formatting exactly.
 - Output ONLY the Vietnamese translation. Do NOT include the original Korean text, quotes, or explanations.`;
 
-const VI_TO_KO_INSTRUCTION = `You are a professional real-time Vietnamese-to-Korean translator for Discord chat.
-Translate ONLY the target Vietnamese message (including unaccented Vietnamese or casual abbreviations like "ko", "dc", "ok", "nha", "ạ") into natural, polite conversational Korean (해요체).
-- Example input: "Hôm nay 8 giờ tối họp nhé mọi người" -> Example output: "오늘 저녁 8시에 다 같이 회의해요."
-- Example input: "ok ban oi, doi xiu nhe" -> Example output: "네, 잠시만 기다려 주세요."
-- If previous chat context is provided, use it ONLY to resolve implied subjects and tone accurately. NEVER repeat or translate the context lines.
+const VI_TO_KO_INSTRUCTION = `You are a polite, professional real-time Vietnamese-to-Korean translator for a gaming/grinding Discord team.
+Translate ONLY the target Vietnamese message (including unaccented Vietnamese or casual chat abbreviations like "ko", "dc", "ok", "nha", "ạ", "acc", "dis") into natural, polite conversational Korean (해요체).
+- ALWAYS use polite, courteous Korean (해요체: ~요, ~주세요, ~드릴게요, ~할게요, 죄송합니다, 감사합니다). NEVER use rude or casual plain speech (반말), even if the Vietnamese input is very short or informal.
+- ${GAMING_GLOSSARY}
+- Example input: "cày acc xong rồi nha" -> Example output: "계정 육성 다 끝났어요!"
+- Example input: "đang bị dis game, đợi xíu tôi log lại nhé" -> Example output: "지금 게임이 튕겨서 잠시만 기다려 주시면 다시 접속할게요."
+- Example input: "ok ban oi doi xiu nha" -> Example output: "네, 잠시만 기다려 주세요!"
+- Example input: "Hôm nay 8 giờ tối vào party đánh boss nhé mọi người" -> Example output: "오늘 저녁 8시에 다 같이 보스 파티 들어가요!"
+- If previous chat context is provided, use it ONLY to resolve implied subjects and tone. NEVER repeat or translate the context lines.
 - Preserve Discord mentions (<@123>, <#123>, <@&123>), custom emojis (<:name:123>, <a:name:123>), URLs, numbers, and code formatting exactly.
 - Output ONLY the Korean translation in Hangul. Do NOT output Vietnamese, quotes, or explanations.
-- If the target message is clearly pure English (e.g., "hello", "good morning", "nice try", "thank you", "deploy done", "gg") with no Vietnamese words, output exactly: SKIP`;
+- If the target message is clearly pure English unrelated to Vietnamese (e.g., "hello", "good morning", "nice try", "thank you", "deploy done", "gg") with no Vietnamese words, output exactly: SKIP`;
 
-const MIXED_INSTRUCTION = `You are a professional real-time bilingual Korean-Vietnamese translator for Discord chat.
-The target message mixes both Korean and Vietnamese. Translate the full meaning naturally into BOTH languages on two separate lines so both Korean and Vietnamese readers understand everything:
-🇻🇳 <full natural Vietnamese meaning>
-🇰🇷 <full natural polite Korean meaning (해요체)>
+const MIXED_INSTRUCTION = `You are a polite, professional real-time bilingual Korean-Vietnamese translator for a gaming/grinding Discord team.
+The target message mixes both Korean and Vietnamese. Translate the full meaning politely and naturally into BOTH languages on two separate lines so both Korean and Vietnamese readers understand everything:
+🇻🇳 <full polite natural Vietnamese meaning>
+🇰🇷 <full polite natural Korean meaning (해요체)>
+- ${GAMING_GLOSSARY}
 - If previous chat context is provided, use it ONLY for reference. NEVER translate the context lines.
 - Preserve Discord mentions, custom emojis, URLs, and code formatting. Output ONLY the 2 lines above.`;
 
@@ -115,7 +142,7 @@ function selectSystemInstruction(text) {
 }
 
 /**
- * Ultra-fast (~100-500ms) free Google Translate GTX fallback when Gemini is slow or overloaded.
+ * Free Google Translate GTX fallback when all Gemini models fail or exceed timeout.
  * @param {string} text
  * @returns {Promise<{ text: string, model: string } | null>}
  */
@@ -152,10 +179,10 @@ export async function translateWithGoogleGtx(text) {
 }
 
 /**
- * Creates a translator function with multi-model fallback + instant Google GTX fallback.
+ * Creates a translator function with multi-model fallback + instant Google GTX safety net.
  */
 export function createTranslator({
-  candidateModels = [config.geminiModel],
+  candidateModels = [config.geminiModel, ...config.geminiFallbackModels],
   executeWithPool = (fn) => keyPool.executeWithFailover(fn),
   fastFallbackFn = translateWithGoogleGtx,
 } = {}) {
@@ -177,7 +204,8 @@ export function createTranslator({
             config: {
               systemInstruction,
               temperature: 0.2,
-              abortSignal: AbortSignal.timeout(2200),
+              thinkingConfig: { thinkingLevel: 'MINIMAL' },
+              abortSignal: AbortSignal.timeout(4500),
             },
           });
           return response.text;
@@ -191,7 +219,7 @@ export function createTranslator({
         return { text: cleaned, model };
       } catch (error) {
         lastError = error;
-        console.warn(`[Gemini] Model "${model}" slow/failed (${error.message}). Switching to instant fallback...`);
+        console.warn(`[Gemini] Model "${model}" slow/failed (${error.message}). Switching to next fallback...`);
       }
     }
 

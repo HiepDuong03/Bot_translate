@@ -49,8 +49,8 @@ Bot đã tích hợp sẵn **HTTP Health Check Server** (lắng nghe cổng `POR
    * `DISCORD_TOKEN`: Token bot Discord
    * `CLIENT_ID`: Application ID của bot
    * `GEMINI_API_KEYS`: Dán 3–5 API Key cách nhau bằng dấu phẩy
-   * `GEMINI_MODEL`: `gemini-3.5-flash-lite`
-   * `GEMINI_FALLBACK_MODELS`: `gemini-flash-lite-latest,gemini-3.1-flash-lite`
+   * `GEMINI_MODEL`: `gemini-flash-lite-latest`
+   * `GEMINI_FALLBACK_MODELS`: `gemini-3.5-flash-lite,gemini-3.1-flash-lite`
    * `AUTO_TRANSLATE_ALL`: `true` *(mặc định bot tự dịch ở mọi kênh mà bạn cấp quyền cho bot; tắt riêng từng kênh bằng `/translate-off`)*
    * `BATCH_DEBOUNCE_MS`: `0` *(dịch ngay lập tức `0ms` khi vừa bấm Enter; có thể chỉnh thành `800` nếu muốn gom nhiều tin nhắn liên tiếp)*
    * `CONTEXT_MAX_MESSAGES`: `4` *(nhớ 4 tin gần nhất làm ngữ cảnh dịch)*

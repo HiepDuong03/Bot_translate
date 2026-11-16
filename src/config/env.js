@@ -16,11 +16,11 @@ function parseIntWithDefault(value, fallback, min = 0) {
 
 // Automatically remap slow/overloaded heavy models if still set in Render Environment
 const SLOW_MODELS = new Set(['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-2.5-flash']);
-const rawPrimaryModel = (process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite').trim();
-const primaryModel = SLOW_MODELS.has(rawPrimaryModel) ? 'gemini-3.5-flash-lite' : rawPrimaryModel;
+const rawPrimaryModel = (process.env.GEMINI_MODEL || 'gemini-flash-lite-latest').trim();
+const primaryModel = SLOW_MODELS.has(rawPrimaryModel) ? 'gemini-flash-lite-latest' : rawPrimaryModel;
 
 const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
-const rawFallbacks = process.env.GEMINI_FALLBACK_MODELS ?? 'gemini-flash-lite-latest,gemini-3.1-flash-lite';
+const rawFallbacks = process.env.GEMINI_FALLBACK_MODELS ?? 'gemini-3.5-flash-lite,gemini-3.1-flash-lite';
 const fallbackModels = parseCommaList(rawFallbacks).filter((m) => m !== primaryModel && !SLOW_MODELS.has(m));
 
 export const config = {

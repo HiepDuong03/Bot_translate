@@ -211,22 +211,22 @@ async function runTests() {
   const liveSamples = [
     { input: '가능한사람있을까요', context: [], expectHangul: false },
     {
-      input: '아 진짜요? 넘 웃기네 ㅋㅋㅋ 낼 봐요',
-      context: [{ authorName: 'Hiep', text: '오늘 8시에 만나요' }],
+      input: '지금 점검 중이라서 잠깐 쉴게요 ㅋㅋ',
+      context: [{ authorName: 'Hiep', text: '이 계정 오늘 8시간 채워야 해요' }],
       expectHangul: false,
     },
     {
-      input: 'để mai nhé',
-      context: [{ authorName: '밥밥', text: '이 작업 오늘까지 해야 해요?' }],
+      input: 'đang bị dis game, đợi xíu mình log acc lại nhé',
+      context: [{ authorName: '밥밥', text: '지금 사냥 시작했어요?' }],
       expectHangul: true,
     },
     {
-      input: 'ok ban oi doi xiu nha',
+      input: 'cày acc xong rồi nha',
       context: [],
       expectHangul: true,
     },
     {
-      input: '오늘 8시 họp nhé mọi người',
+      input: '오늘 8시 vào party đánh boss nhé mọi người',
       context: [],
       expectMixed: true,
     },
