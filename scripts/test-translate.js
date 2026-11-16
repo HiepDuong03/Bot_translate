@@ -197,9 +197,25 @@ async function runTests() {
   await sleep(80);
   await handler({ author: { id: 'u3', bot: false, username: 'Lee' }, guild: {}, channelId: 'ch-1', content: '테스트2', channel: mockChannel });
   await sleep(80);
-  dispose();
   assert.equal(sentMessages.length, 4);
   assert.match(sentMessages[3].content, /API Key/);
+
+  // Partial message fetch (VoiceChannel / uncached channel)
+  failWithQuota = false;
+  let fetchedPartial = false;
+  await handler({
+    partial: true,
+    fetch: async () => { fetchedPartial = true; },
+    author: { id: 'u4', bot: false, username: 'Park' },
+    guild: {},
+    channelId: 'ch-1',
+    content: '잠시만요',
+    channel: mockChannel,
+  });
+  await sleep(80);
+  assert.equal(fetchedPartial, true);
+  assert.equal(sentMessages.length, 5);
+  dispose();
   console.log('PASS: handleMessageCreate');
 
   console.log('\n=== 7. Live Gemini Translation Test (optional if .env has keys) ===');

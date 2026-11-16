@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { Client, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
+import { Client, Events, GatewayIntentBits, Partials, REST, Routes } from 'discord.js';
 import { config, validateConfig } from './config/env.js';
 import { commandDefinitions, handleSlashCommand } from './commands/translateCommands.js';
 import { disposeMessageHandler, handleMessageCreate } from './events/messageCreate.js';
@@ -22,6 +22,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
   ],
+  partials: [Partials.Channel, Partials.Message],
 });
 
 async function registerCommands() {

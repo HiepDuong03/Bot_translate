@@ -89,6 +89,9 @@ export function createMessageHandler({
   });
 
   async function handler(message) {
+    if (message.partial) {
+      await message.fetch().catch(() => {});
+    }
     if (message.author?.bot || message.webhookId || !message.guild) return;
 
     const channelName = message.channel?.name || message.channelId;
