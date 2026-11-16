@@ -225,7 +225,7 @@ async function runTests() {
   }
 
   const liveSamples = [
-    { input: '가능한사람있을까요', context: [], expectHangul: false },
+    { input: '아 이전아이디 다 받아서 없는거구나', context: [], expectHangul: false },
     {
       input: '지금 점검 중이라서 잠깐 쉴게요 ㅋㅋ',
       context: [{ authorName: 'Hiep', text: '이 계정 오늘 8시간 채워야 해요' }],
